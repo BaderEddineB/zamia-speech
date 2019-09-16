@@ -103,6 +103,9 @@ def get_volume(recording):
     return volume
     
 def extract_wav(recording, volume, wav, startTime, endTime):
+    if os.path.exists(wav):
+        logging.debug('Skipping {wav} as it already exists'.format(wav=wav))
+        return
     startTimeF = float(startTime)
     endTimeF = float(endTime)
     duration = endTimeF - startTimeF
@@ -112,7 +115,7 @@ def extract_wav(recording, volume, wav, startTime, endTime):
     os.system(cmd)
 
 def find_recording(dir, root_filename):
-    for suffix in ['.wav', '.mp3', '-v2.wav', '-v2.mp3']:
+    for suffix in ['.wav', '.WAV', '.mp3', '-v2.wav', '-v2.mp3']:
         recording='{dir}/{root_filename}{suffix}'.format(dir=dir, root_filename=root_filename, suffix=suffix)
         if os.path.isfile(recording):
             return recording
@@ -185,8 +188,8 @@ def process_dir(pool, dir):
                                     os.makedirs(wavdir)
                                 if not os.path.exists(etcdir):
                                     os.makedirs(etcdir)
-                            text="".join(turn.itertext()).replace('\n', '').replace('  ', ' ')
-                            if text != '':
+                            text=" ".join(turn.itertext()).replace('\n', '').replace('  ', ' ')
+                            if re.search(r'\w', text, re.I) != None and re.search(r'¤', text) == None:
                                 uttid='{spk}-{name}-{startTime}-{endTime}'.format(name=root_filename, spk=speakername, startTime=startTime, endTime=endTime)
                                 if not options.dry:
                                     with codecs.open('{etcdir}/prompts-original'.format(etcdir=etcdir), 'a', 'utf8') as promptsf:
@@ -198,6 +201,8 @@ def process_dir(pool, dir):
                                     logging.debug('Convert {recording} from {startTime} to {endTime} to {wav} with volume gain of {volume}'.format(recording=recording, volume=volume, wav=wav, startTime=startTime, endTime=endTime))
                                     pool.apply_async(extract_wav, args=(recording, volume, wav, startTime, endTime))
                                 totalDuration=totalDuration+duration
+                            else:
+                                logging.debug('Skipping empty/anonymized text={text}'.format(text=text))
     return totalDuration
 
 pool = mp.Pool(mp.cpu_count())
