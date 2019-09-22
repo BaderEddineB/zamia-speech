@@ -84,10 +84,10 @@ def add_missing_words(transcripts, lex, sequitur_model_path):
     cnt = 0
     missing_tokens = [ item[0] for item in reversed(sorted(missing.items(), key=lambda x: x[1])) ]
     ipa_map = sequitur_gen_ipa_multi(sequitur_model_path, missing_tokens)
-    for missing_token in ipa_map:
-        ipas = ipa_map[missing_token]
+    for lex_base in ipa_map:
+        ipas = ipa_map[lex_base]
         logging.info(u"%5d/%5d Adding missing word : %s [ %s ]" % (
-        cnt, len(missing), missing_token, ipas))
+        cnt, len(missing), lex_base, ipas))
 
         lex_entry = {'ipa': ipas}
         lex[lex_base] = lex_entry
